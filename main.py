@@ -112,7 +112,7 @@ def batting_record():
         name = next((p['name'] for p in players if p['number'] == number), '未知')
         result = request.form['batting_result']
         game_date = request.form['game_date']
-        has_runner = request.form['has_runner']
+        has_runner = request.form['has_runner'] # Capture has_runner directly from form
         rbi = request.form['rbi']
 
         hit_results = ['一壘', '二壘', '三壘', '全壘打']
@@ -140,7 +140,7 @@ def batting_record():
             'date': game_date,
             'average': average, # Save as float
             'result': result,
-            'has_runner': has_runner,
+            'has_runner': has_runner, # Use the value captured from the form
             'rbi': rbi
         })
         return redirect('/batting')
@@ -161,29 +161,45 @@ def summary():
     hit_results = ['一壘', '二壘', '三壘', '全壘打']
     on_base_results = hit_results + ['保送', '野選', '對手失誤上壘']
 
-    # 精確定義得點圈跑者狀態
-    risp_conditions = ['二壘', '三壘', '滿壘', '一三壘', '一二壘', '二三壘', '一二三壘']
-
     stats = []
     for p in players:
         number = p['number']
         name = p['name']
         at_bats = hits = walks = on_base = total_rbi = total_bases = 0
-        runner_hits = runner_at_bats = 0
-        risp_hits = risp_at_bats = 0
+        
+        # New counters based on your data fields:
+        runner_on_1st_hits = 0
+        runner_on_1st_at_bats = 0
+        risp_specific_hits = 0
+        risp_specific_at_bats = 0
 
         for r in records:
             if r['number'] != number:
                 continue
             result = r['result']
-            has_runner = (r['has_runner'] or '').strip()
+            has_runner = (r['has_runner'] or '').strip() # Ensure stripping whitespace
 
             is_ab = result not in ['保送']
             is_hit = result in hit_results
-            runner_on = has_runner != '無人' # 只要壘上有人，就計算壘上打擊率
+            
+            # General runner on base condition (for '壘上有人打擊率' if needed, though your current UI doesn't show it as a separate column)
+            # Based on your image, has_runner seems to be '得點圈有人', '壘上無人', '一壘有人'
+            
+            # --- Start of specific calculation for your fields '得點圈有人' and '一壘有人' ---
+            
+            # Calculate '壘上有人打擊率' based on '一壘有人'
+            if is_ab and has_runner == '一壘有人':
+                runner_on_1st_at_bats += 1
+                if is_hit:
+                    runner_on_1st_hits += 1
 
-            # 得點圈判斷：has_runner 必須精確匹配 risp_conditions 中的一個值
-            is_risp = has_runner in risp_conditions
+            # Calculate '得點圈打擊率' based on '得點圈有人'
+            if is_ab and has_runner == '得點圈有人':
+                risp_specific_at_bats += 1
+                if is_hit:
+                    risp_specific_hits += 1
+
+            # --- End of specific calculation ---
 
             if is_ab:
                 at_bats += 1
@@ -200,17 +216,6 @@ def summary():
             elif result == '三壘': total_bases += 3
             elif result == '全壘打': total_bases += 4
 
-            if is_ab and runner_on:
-                runner_at_bats += 1
-                if is_hit:
-                    runner_hits += 1
-            
-            # 只有當為打席且是得點圈狀況時才計入得點圈打席
-            if is_ab and is_risp:
-                risp_at_bats += 1
-                if is_hit:
-                    risp_hits += 1
-
             try:
                 total_rbi += int(r['rbi'])
             except (ValueError, TypeError): # 處理 rbi 不是有效數字的情況
@@ -219,8 +224,10 @@ def summary():
         average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
         obp = round(on_base / (at_bats + walks), 3) if (at_bats + walks) > 0 else 0.000
         slg = round(total_bases / at_bats, 3) if at_bats > 0 else 0.000
-        runner_avg = round(runner_hits / runner_at_bats, 3) if runner_at_bats > 0 else 0.000
-        risp_avg = round(risp_hits / risp_at_bats, 3) if risp_at_bats > 0 else 0.000
+        
+        # Calculate rates based on the new specific conditions
+        runner_avg = round(runner_on_1st_hits / runner_on_1st_at_bats, 3) if runner_on_1st_at_bats > 0 else 0.000
+        risp_avg = round(risp_specific_hits / risp_specific_at_bats, 3) if risp_specific_at_bats > 0 else 0.000
 
         stats.append({
             'number': number,
@@ -231,8 +238,8 @@ def summary():
             'obp': f"{obp:.3f}",
             'slg': f"{slg:.3f}",
             'rbi': total_rbi,
-            'runner_avg': f"{runner_avg:.3f}",
-            'risp_avg': f"{risp_avg:.3f}"
+            'runner_avg': f"{runner_avg:.3f}", # Now represents '一壘有人打擊率'
+            'risp_avg': f"{risp_avg:.3f}" # Now represents '得點圈有人打擊率'
         })
 
     return render_template('summary.html', stats=stats)
