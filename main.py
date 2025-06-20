@@ -1,4 +1,4 @@
-# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率
+# ✅ SQLite 改 PostgreSQL 並加入壘上、得點圈安打率
 
 from flask import Flask, render_template, request, redirect
 import psycopg2
@@ -174,12 +174,12 @@ def summary():
             if r['number'] != number:
                 continue
             result = r['result']
-            has_runner = r['has_runner'] or ''
+            has_runner = (r['has_runner'] or '').strip()
 
             is_ab = result not in ['保送']
             is_hit = result in hit_results
-            runner_on = has_runner.strip() != '無人'
-            is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘'])
+            runner_on = has_runner != '無人'
+            is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘', '一二三壘'])
 
             if is_ab:
                 at_bats += 1
