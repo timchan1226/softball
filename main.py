@@ -123,12 +123,12 @@ def batting_record():
         existing_records = load_records()
         for row in existing_records:
             if row['number'] == number:
-                if row['result'] not in ['保送', '高飛犧牲']:
+                if row['result'] not in ['保送']:
                     total_at_bats += 1
                 if row['result'] in hit_results:
                     total_hits += 1
 
-        if result not in ['保送', '高飛犧牲']:
+        if result not in ['保送']:
             total_at_bats += 1
         if result in hit_results:
             total_hits += 1
@@ -176,7 +176,7 @@ def summary():
             result = r['result']
             has_runner = r['has_runner']
 
-            is_ab = result not in ['保送', '高飛犧牲']
+            is_ab = result not in ['保送']
             is_hit = result in hit_results
             is_risp = has_runner.strip() in ['2壘', '3壘', '滿壘', '一三壘', '一二壘']
 
