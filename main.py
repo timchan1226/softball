@@ -1,80 +1,88 @@
-# ✅ 改用 PostgreSQL 儲存版本（適用於 Railway）
-
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
 from datetime import date
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 
-# ✅ PostgreSQL 資料庫連線設定（從環境變數取得）
-DB_URL = os.environ.get("DATABASE_URL")  # Railway 預設提供 DATABASE_URL
+# ✅ 連接 PostgreSQL（使用 DATABASE_URL）
+def get_connection():
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        raise Exception("❌ 沒有設定 DATABASE_URL 環境變數")
+    result = urlparse(db_url)
+    return psycopg2.connect(
+        dbname=result.path[1:],
+        user=result.username,
+        password=result.password,
+        host=result.hostname,
+        port=result.port
+    )
 
-# ✅ 初始化資料庫
-
+# ✅ 初始化資料表
 def init_db():
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS players (
-                        number TEXT PRIMARY KEY,
-                        name TEXT
-                    )''')
+            number TEXT PRIMARY KEY,
+            name TEXT
+        )''')
         c.execute('''CREATE TABLE IF NOT EXISTS records (
-                        id SERIAL PRIMARY KEY,
-                        number TEXT,
-                        name TEXT,
-                        date TEXT,
-                        average REAL,
-                        result TEXT,
-                        has_runner TEXT,
-                        rbi INTEGER
-                    )''')
+            id SERIAL PRIMARY KEY,
+            number TEXT,
+            name TEXT,
+            date TEXT,
+            average REAL,
+            result TEXT,
+            has_runner TEXT,
+            rbi INTEGER
+        )''')
         conn.commit()
 
-# ✅ 載入球員資料
+# ✅ 載入球員
 def load_players():
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute("SELECT number, name FROM players ORDER BY number")
         return [{'number': row[0], 'name': row[1]} for row in c.fetchall()]
 
-# ✅ 儲存新球員
+# ✅ 儲存球員
 def save_player(player):
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO players (number, name) VALUES (%s, %s)", (player['number'], player['name']))
         conn.commit()
 
 # ✅ 載入打擊紀錄
 def load_records():
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute("SELECT id, number, name, date, average, result, has_runner, rbi FROM records")
-        return [
-            {
-                'id': row[0],
-                'number': row[1],
-                'name': row[2],
-                'date': row[3],
-                'average': f"{row[4]:.3f}",
-                'result': row[5],
-                'has_runner': row[6],
-                'rbi': row[7]
-            } for row in c.fetchall()
-        ]
+        return [{
+            'id': row[0],
+            'number': row[1],
+            'name': row[2],
+            'date': row[3],
+            'average': f"{row[4]:.3f}",
+            'result': row[5],
+            'has_runner': row[6],
+            'rbi': row[7]
+        } for row in c.fetchall()]
 
 # ✅ 儲存打擊紀錄
 def save_record(record):
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute('''INSERT INTO records (number, name, date, average, result, has_runner, rbi)
                      VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                  (record['number'], record['name'], record['date'], record['average'], record['result'], record['has_runner'], record['rbi']))
+                  (record['number'], record['name'], record['date'], record['average'],
+                   record['result'], record['has_runner'], record['rbi']))
         conn.commit()
 
-# ✅ 刪除打擊紀錄
+# ✅ 刪除紀錄
 def delete_record_by_index(record_id):
-    with psycopg2.connect(DB_URL) as conn:
+    with get_connection() as conn:
         c = conn.cursor()
         c.execute("DELETE FROM records WHERE id = %s", (record_id,))
         conn.commit()
@@ -108,7 +116,6 @@ def batting_record():
         rbi = request.form['rbi']
 
         hit_results = ['一壘', '二壘', '三壘', '全壘打']
-
         total_hits = 0
         total_at_bats = 0
         existing_records = load_records()
@@ -185,8 +192,7 @@ def summary():
                     pass
 
         average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
-        obp_denominator = at_bats + walks
-        obp = round(on_base / obp_denominator, 3) if obp_denominator > 0 else 0.000
+        obp = round(on_base / (at_bats + walks), 3) if (at_bats + walks) > 0 else 0.000
         slg = round(total_bases / at_bats, 3) if at_bats > 0 else 0.000
 
         stats.append({
@@ -202,7 +208,7 @@ def summary():
 
     return render_template('summary.html', stats=stats)
 
-# ✅ 啟動前初始化 DB
+# ✅ 啟動前建立資料表
 init_db()
 
 if __name__ == '__main__':
