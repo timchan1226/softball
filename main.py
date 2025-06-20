@@ -1,3 +1,5 @@
+# ✅ SQLite 改 PostgreSQL 並加入壘上、得點圈安打率
+
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
@@ -164,36 +166,54 @@ def summary():
     for p in players:
         number = p['number']
         name = p['name']
-        at_bats = 0
-        hits = 0
-        walks = 0
-        on_base = 0
-        total_rbi = 0
-        total_bases = 0
+        at_bats = hits = walks = on_base = total_rbi = total_bases = 0
+        runner_hits = runner_at_bats = 0
+        risp_hits = risp_at_bats = 0
 
         for r in records:
-            if r['number'] == number:
-                result = r['result']
-                if result not in ['保送', '高飛犧牲']:
-                    at_bats += 1
-                if result in hit_results:
-                    hits += 1
-                if result == '保送':
-                    walks += 1
-                if result in on_base_results:
-                    on_base += 1
-                if result == '一壘': total_bases += 1
-                elif result == '二壘': total_bases += 2
-                elif result == '三壘': total_bases += 3
-                elif result == '全壘打': total_bases += 4
-                try:
-                    total_rbi += int(r['rbi'])
-                except:
-                    pass
+            if r['number'] != number:
+                continue
+            result = r['result']
+            has_runner = r['has_runner']
+
+            is_ab = result not in ['保送', '高飛犧牲']
+            is_hit = result in hit_results
+            is_risp = has_runner.strip() in ['2壘', '3壘', '滿壘', '一三壘', '一二壘']
+
+            if is_ab:
+                at_bats += 1
+            if is_hit:
+                hits += 1
+
+            if r['result'] == '保送':
+                walks += 1
+            if result in on_base_results:
+                on_base += 1
+
+            if result == '一壘': total_bases += 1
+            elif result == '二壘': total_bases += 2
+            elif result == '三壘': total_bases += 3
+            elif result == '全壘打': total_bases += 4
+
+            if is_ab and has_runner.strip() != '無人':
+                runner_at_bats += 1
+                if is_hit:
+                    runner_hits += 1
+            if is_ab and is_risp:
+                risp_at_bats += 1
+                if is_hit:
+                    risp_hits += 1
+
+            try:
+                total_rbi += int(r['rbi'])
+            except:
+                pass
 
         average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
         obp = round(on_base / (at_bats + walks), 3) if (at_bats + walks) > 0 else 0.000
         slg = round(total_bases / at_bats, 3) if at_bats > 0 else 0.000
+        runner_avg = round(runner_hits / runner_at_bats, 3) if runner_at_bats > 0 else 0.000
+        risp_avg = round(risp_hits / risp_at_bats, 3) if risp_at_bats > 0 else 0.000
 
         stats.append({
             'number': number,
@@ -203,7 +223,9 @@ def summary():
             'average': f"{average:.3f}",
             'obp': f"{obp:.3f}",
             'slg': f"{slg:.3f}",
-            'rbi': total_rbi
+            'rbi': total_rbi,
+            'runner_avg': f"{runner_avg:.3f}",
+            'risp_avg': f"{risp_avg:.3f}"
         })
 
     return render_template('summary.html', stats=stats)
