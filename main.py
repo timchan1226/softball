@@ -1,4 +1,4 @@
-# ✅ SQLite 改 PostgreSQL 並加入壘上、得點圈安打率
+# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率
 
 from flask import Flask, render_template, request, redirect
 import psycopg2
@@ -68,7 +68,7 @@ def load_records():
             'date': row[3],
             'average': f"{row[4]:.3f}",
             'result': row[5],
-            'has_runner': row[6],
+            'has_runner': row[6] or '',
             'rbi': row[7]
         } for row in c.fetchall()]
 
@@ -174,10 +174,11 @@ def summary():
             if r['number'] != number:
                 continue
             result = r['result']
-            has_runner = r['has_runner']
+            has_runner = r['has_runner'] or ''
 
             is_ab = result not in ['保送']
             is_hit = result in hit_results
+            runner_on = has_runner.strip() != '無人'
             is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘'])
 
             if is_ab:
@@ -195,7 +196,7 @@ def summary():
             elif result == '三壘': total_bases += 3
             elif result == '全壘打': total_bases += 4
 
-            if is_ab and has_runner.strip() != '無人':
+            if is_ab and runner_on:
                 runner_at_bats += 1
                 if is_hit:
                     runner_hits += 1
