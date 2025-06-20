@@ -63,6 +63,8 @@
           <th>打擊率</th>
           <th>上壘率</th>
           <th>長打率 (SLG)</th>
+          <th>壘上有人打擊率</th>
+          <th>得點圈打擊率</th>
           <th>打點</th>
         </tr>
       </thead>
@@ -76,6 +78,8 @@
             <td>{{ player.average }}</td>
             <td>{{ player.obp }}</td>
             <td>{{ player.slg }}</td>
+            <td>{{ player.runner_avg }}</td>
+            <td>{{ player.risp_avg }}</td>
             <td>{{ player.rbi }}</td>
           </tr>
         {% endfor %}
