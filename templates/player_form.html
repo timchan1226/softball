@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新增球員資料</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background-color: #f9f9f9;
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    label {
+      font-size: 16px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    ul {
+      max-width: 400px;
+      margin: 20px auto 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      font-size: 16px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<h2>新增球員資料</h2>
+<form method="post">
+  <label for="player_number">背號：</label>
+  <input type="text" name="player_number" id="player_number" required>
+
+  <label for="player_name">姓名：</label>
+  <input type="text" name="player_name" id="player_name" required>
+
+  <button type="submit">新增球員</button>
+</form>
+
+<h3>目前球員列表：</h3>
+<ul>
+  {% for player in players %}
+    <li>{{ player.number }} - {{ player.name }}</li>
+  {% endfor %}
+</ul>
+
+<a href="/">返回首頁</a>
+
+</body>
+</html>

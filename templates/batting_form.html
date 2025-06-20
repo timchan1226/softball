@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>填寫打擊紀錄</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 15px;
+      margin: 0;
+      background-color: #f8f9fa;
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .delete-button {
+      background-color: #dc3545;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>填寫打擊資料</h2>
+<form method="post">
+  <label>選擇球員：</label>
+  <select name="player_number" required>
+    {% for player in players %}
+      <option value="{{ player.number }}">{{ player.number }} - {{ player.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label>比賽日期：</label>
+  <input type="date" name="game_date" value="{{ today }}" required>
+
+  <label>打擊結果：</label>
+  <select name="batting_result" required>
+    <option value="一壘">一壘</option>
+    <option value="二壘">二壘</option>
+    <option value="三壘">三壘</option>
+    <option value="全壘打">全壘打</option>
+    <option value="保送">保送</option>
+    <option value="三振">三振</option>
+    <option value="野選">野選</option>
+    <option value="對手失誤上壘">對手失誤上壘</option>
+    <option value="雙殺">雙殺</option>
+    <option value="高飛犧牲">高飛犧牲</option>
+    <option value="外野接殺">外野接殺</option>
+    <option value="內野接殺">內野接殺</option>
+    <option value="內野滾地">內野滾地</option>
+  </select>
+
+  <label>壘包狀態：</label>
+  <select name="has_runner" required>
+    <option value="一壘有人">一壘有人</option>
+    <option value="得點圈有人">得點圈有人</option>
+    <option value="壘上無人" selected>壘上無人</option> <!-- ✅ 預設 壘上無人 -->
+
+  </select>
+
+  <label>打點（RBI）：</label>
+  <select name="rbi" required>
+    <option value="0">0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+  </select>
+
+
+
+  <button type="submit">提交紀錄</button>
+</form>
+
+  <h3>歷史打擊紀錄</h3>
+  <div class="table-container">
+    <table>
+      <tr>
+        <th>比賽日期</th>
+        <th>背號</th>
+        <th>姓名</th>
+        <th>打擊結果</th>
+        <th>打擊率</th>
+        <th>打點</th> <!-- 👈 新增打點欄位 -->
+        <th>操作</th>
+      </tr>
+      {% for record in records %}
+        <tr>
+          <td>{{ record.date }}</td>
+          <td>{{ record.number }}</td>
+          <td>{{ record.name }}</td>
+          <td>{{ record.result }}</td>
+          <td>{{ record.average }}</td>
+          <td>{{ record.rbi or 0 }}</td> <!-- 👈 顯示打點（若缺失則顯示0） -->
+          <td>
+            <form method="post" action="/delete_record/{{ record.id }}" onsubmit="return confirm('確認刪除這筆紀錄嗎？');">
+              <button type="submit" class="delete-button">刪除</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+
+
+<a href="/">返回首頁</a>
+
+</body>
+</html>
