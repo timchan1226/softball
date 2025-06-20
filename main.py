@@ -179,12 +179,12 @@ def summary():
             is_ab = result not in ['保送']
             is_hit = result in hit_results
             runner_on = has_runner != '無人'
-            is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘', '一二三壘'])
+            is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘', '二三壘', '一二三壘'])
 
             if is_ab:
                 at_bats += 1
-            if is_hit:
-                hits += 1
+                if is_hit:
+                    hits += 1
 
             if result == '保送':
                 walks += 1
