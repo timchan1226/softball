@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ player.name }} 的紀錄</title>
+</head>
+<body>
+  <h2>{{ player.name }} 的 {{ date }} 打擊紀錄</h2>
+  {% if records %}
+    <table border="1">
+      <thead>
+        <tr>
+          <th>結果</th>
+          <th>壘上狀況</th>
+          <th>打擊率</th>
+          <th>打點</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ r.result }}</td>
+          <td>{{ r.has_runner }}</td>
+          <td>{{ "%.3f"|format(r.average) }}</td>
+          <td>{{ r.rbi }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>找不到紀錄。</p>
+  {% endif %}
+  <a href="/records">返回查詢</a>
+</body>
+</html>
