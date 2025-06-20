@@ -100,19 +100,18 @@
   <a href="/">返回首頁</a>
 
   <script>
-    let currentSortCol = null;
-    let currentSortDir = 'desc';
+    let currentSortCol = 4;  // 預設第4欄（打擊率）
+    let currentSortDir = 'desc';  // 預設降冪
 
     function sortTable(colIndex) {
       const table = document.getElementById("summaryTable");
       const rows = Array.from(table.rows).slice(1);
       const headers = table.querySelectorAll("th");
 
-      // 清除其他欄位箭頭
+      // 清除所有欄位的排序樣式
       headers.forEach((th, i) => {
         th.classList.remove("sort-asc", "sort-desc");
         if (i === colIndex) {
-          // 切換排序方向
           currentSortDir = (currentSortCol === colIndex && currentSortDir === 'asc') ? 'desc' : 'asc';
           currentSortCol = colIndex;
           th.classList.add(currentSortDir === 'asc' ? "sort-asc" : "sort-desc");
@@ -135,9 +134,10 @@
       }
     }
 
-    // 預設按第 4 欄（打擊率）做降冪排序
     window.onload = function () {
-      sortTable(4);
+      const headers = document.querySelectorAll("th");
+      headers[currentSortCol].classList.add("sort-desc");
+      sortTable(currentSortCol);
     };
   </script>
 
