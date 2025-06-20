@@ -128,7 +128,7 @@ def batting_record():
         rbi = request.form['rbi']
 
         hit_results = ['一壘', '二壘', '三壘', '全壘打']
-        valid_at_bat_results = hit_results + ['高飛犧牲', '對手失誤上壘']
+        valid_at_bat_results = hit_results + ['高飛犧牲', '對手失誤上壘','三振','外野接殺','內野接殺','內野滾定']
 
         total_hits = 0
         total_valid_at_bats = 0
@@ -172,7 +172,7 @@ def summary():
     players = load_players()
     records = load_records()
     hit_results = ['一壘', '二壘', '三壘', '全壘打']
-    valid_at_bat_results = hit_results + ['高飛犧牲', '對手失誤上壘']
+    valid_at_bat_results = hit_results + ['高飛犧牲', '對手失誤上壘','三振','外野接殺','內野接殺','內野滾定']
     on_base_results = hit_results + ['保送']
 
     stats = []
