@@ -116,7 +116,10 @@ def personal_record_result():
     start_date = request.form['start_date']
     end_date = request.form['end_date']
     number = request.form['player_number']
-    records = [r for r in load_records() if r['number'] == number and start_date <= r['date'] <= end_date]
+    records = sorted(
+        [r for r in load_records() if r['number'] == number and start_date <= r['date'] <= end_date],
+        key=lambda r: r['date'], reverse=True
+    )
     player = next((p for p in load_players() if p['number'] == number), None)
     return render_template('personal_result.html', records=records, player=player, start=start_date, end=end_date)
 
