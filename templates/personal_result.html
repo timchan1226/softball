@@ -2,34 +2,106 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>{{ player.name }} 的紀錄</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人打擊紀錄明細</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      text-align: center;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      font-size: 15px;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #007bff;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      th, td {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>{{ player.name }} 的 {{ date }} 打擊紀錄</h2>
+
+  <h2>📋 {{ player.name }} 的打擊紀錄</h2>
+  <div class="info">查詢日期：{{ date }}</div>
+
   {% if records %}
-    <table border="1">
+    <table>
       <thead>
         <tr>
           <th>結果</th>
-          <th>壘上狀況</th>
           <th>打擊率</th>
+          <th>壘上狀況</th>
           <th>打點</th>
         </tr>
       </thead>
       <tbody>
-        {% for r in records %}
+        {% for record in records %}
         <tr>
-          <td>{{ r.result }}</td>
-          <td>{{ r.has_runner }}</td>
-          <td>{{ "%.3f"|format(r.average) }}</td>
-          <td>{{ r.rbi }}</td>
+          <td>{{ record.result }}</td>
+          <td>{{ '%.3f' % record.average }}</td>
+          <td>{{ record.has_runner or '無人' }}</td>
+          <td>{{ record.rbi }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p>找不到紀錄。</p>
+    <div class="info">⚠️ 查無紀錄</div>
   {% endif %}
-  <a href="/records">返回查詢</a>
+
+  <a href="/">返回首頁</a>
+
 </body>
 </html>
