@@ -2,21 +2,93 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>查詢個人紀錄</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 25px;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #007bff;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
+
   <h2>🔎 查詢個人打擊紀錄</h2>
   <form method="post" action="/records/result">
-    <label>日期: <input type="date" name="date" required></label><br><br>
+    <label>日期:
+      <input type="date" name="date" required>
+    </label>
     <label>球員:
       <select name="player_number" required>
         {% for player in players %}
           <option value="{{ player.number }}">{{ player.number }} - {{ player.name }}</option>
         {% endfor %}
       </select>
-    </label><br><br>
+    </label>
     <button type="submit">查詢</button>
   </form>
   <a href="/">返回首頁</a>
+
 </body>
 </html>
