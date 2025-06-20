@@ -1,4 +1,4 @@
-# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率
+# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率與個人區間紀錄查詢
 
 from flask import Flask, render_template, request, redirect
 import psycopg2
@@ -113,11 +113,12 @@ def personal_record_form():
 
 @app.route('/records/result', methods=['POST'])
 def personal_record_result():
-    date_input = request.form['date']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
     number = request.form['player_number']
-    records = [r for r in load_records() if r['number'] == number and r['date'] == date_input]
+    records = [r for r in load_records() if r['number'] == number and start_date <= r['date'] <= end_date]
     player = next((p for p in load_players() if p['number'] == number), None)
-    return render_template('personal_result.html', records=records, player=player, date=date_input)
+    return render_template('personal_result.html', records=records, player=player, start=start_date, end=end_date)
 
 @app.route('/batting', methods=['GET', 'POST'])
 def batting_record():
