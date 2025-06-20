@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查詢明細紀錄</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>查詢明細紀錄</h1>
+        <nav>
+            <ul>
+                <li><a href="/">首頁</a></li>
+                <li><a href="/players">管理球員</a></li>
+                <li><a href="/batting">新增打擊紀錄</a></li>
+                <li><a href="/summary">數據總覽</a></li>
+                <li><a href="/report_form">查詢明細紀錄</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <form action="/report_results" method="POST" class="form-grid">
+                <div class="form-group">
+                    <label for="player_number">選擇球員:</label>
+                    <select id="player_number" name="player_number" required>
+                        {% for player in players %}
+                        <option value="{{ player.number }}">{{ player.number }} - {{ player.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="start_date">開始日期:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ today }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_date">結束日期:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ today }}" required>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit" class="button">顯示紀錄</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
