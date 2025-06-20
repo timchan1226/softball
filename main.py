@@ -1,5 +1,3 @@
-# ✅ SQLite 改 PostgreSQL 並加入壘上、得點圈安打率
-
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
@@ -66,7 +64,7 @@ def load_records():
             'number': row[1],
             'name': row[2],
             'date': row[3],
-            'average': f"{row[4]:.3f}",
+            'average': row[4], # average will be handled as float
             'result': row[5],
             'has_runner': row[6] or '',
             'rbi': row[7]
@@ -78,8 +76,8 @@ def save_record(record):
         c = conn.cursor()
         c.execute('''INSERT INTO records (number, name, date, average, result, has_runner, rbi)
                      VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                  (record['number'], record['name'], record['date'], record['average'],
-                   record['result'], record['has_runner'], record['rbi']))
+                     (record['number'], record['name'], record['date'], record['average'],
+                      record['result'], record['has_runner'], record['rbi']))
         conn.commit()
 
 # ✅ 刪除紀錄
@@ -123,11 +121,12 @@ def batting_record():
         existing_records = load_records()
         for row in existing_records:
             if row['number'] == number:
-                if row['result'] not in ['保送']:
+                if row['result'] not in ['保送']: # 排除保送計算打席
                     total_at_bats += 1
                 if row['result'] in hit_results:
                     total_hits += 1
 
+        # Calculate average for the new record (cumulative up to this point)
         if result not in ['保送']:
             total_at_bats += 1
         if result in hit_results:
@@ -139,7 +138,7 @@ def batting_record():
             'number': number,
             'name': name,
             'date': game_date,
-            'average': average,
+            'average': average, # Save as float
             'result': result,
             'has_runner': has_runner,
             'rbi': rbi
@@ -162,6 +161,9 @@ def summary():
     hit_results = ['一壘', '二壘', '三壘', '全壘打']
     on_base_results = hit_results + ['保送', '野選', '對手失誤上壘']
 
+    # 精確定義得點圈跑者狀態
+    risp_conditions = ['二壘', '三壘', '滿壘', '一三壘', '一二壘', '二三壘', '一二三壘']
+
     stats = []
     for p in players:
         number = p['number']
@@ -178,8 +180,10 @@ def summary():
 
             is_ab = result not in ['保送']
             is_hit = result in hit_results
-            runner_on = has_runner != '無人'
-            is_risp = any(x in has_runner for x in ['2壘', '3壘', '滿壘', '一三壘', '一二壘', '二三壘', '一二三壘'])
+            runner_on = has_runner != '無人' # 只要壘上有人，就計算壘上打擊率
+
+            # 得點圈判斷：has_runner 必須精確匹配 risp_conditions 中的一個值
+            is_risp = has_runner in risp_conditions
 
             if is_ab:
                 at_bats += 1
@@ -200,6 +204,8 @@ def summary():
                 runner_at_bats += 1
                 if is_hit:
                     runner_hits += 1
+            
+            # 只有當為打席且是得點圈狀況時才計入得點圈打席
             if is_ab and is_risp:
                 risp_at_bats += 1
                 if is_hit:
@@ -207,7 +213,7 @@ def summary():
 
             try:
                 total_rbi += int(r['rbi'])
-            except:
+            except (ValueError, TypeError): # 處理 rbi 不是有效數字的情況
                 pass
 
         average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
