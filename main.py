@@ -32,7 +32,7 @@ def init_db():
 def load_players():
     with sqlite3.connect(DB_FILE) as conn:
         c = conn.cursor()
-        c.execute("SELECT number, name FROM players")
+        c.execute("SELECT number, name FROM players order by number")
         return [{'number': row[0], 'name': row[1]} for row in c.fetchall()]
 
 # ✅ 儲存新球員
