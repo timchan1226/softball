@@ -1,5 +1,3 @@
-# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率與個人區間紀錄查詢
-
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
@@ -8,7 +6,8 @@ from urllib.parse import urlparse
 
 app = Flask(__name__)
 
-# ✅ 連接 PostgreSQL（使用 DATABASE_URL）
+# ✅ 連接 PostgreSQL
+
 def get_connection():
     db_url = os.environ.get("DATABASE_URL")
     if not db_url:
@@ -106,23 +105,6 @@ def manage_players():
     players = load_players()
     return render_template('player_form.html', players=players)
 
-@app.route('/records')
-def personal_record_form():
-    players = load_players()
-    return render_template('personal_form.html', players=players)
-
-@app.route('/records/result', methods=['POST'])
-def personal_record_result():
-    start_date = request.form['start_date']
-    end_date = request.form['end_date']
-    number = request.form['player_number']
-    records = sorted(
-        [r for r in load_records() if r['number'] == number and start_date <= r['date'] <= end_date],
-        key=lambda r: r['date'], reverse=True
-    )
-    player = next((p for p in load_players() if p['number'] == number), None)
-    return render_template('personal_result.html', records=records, player=player, start=start_date, end=end_date)
-
 @app.route('/batting', methods=['GET', 'POST'])
 def batting_record():
     players = load_players()
@@ -135,17 +117,19 @@ def batting_record():
         rbi = request.form['rbi']
 
         hit_results = ['一壘', '二壘', '三壘', '全壘打']
+        exclude_from_ab = ['保送']  # 不算打數
+
         total_hits = 0
         total_at_bats = 0
         existing_records = load_records()
         for row in existing_records:
             if row['number'] == number:
-                if row['result'] not in ['保送']:
+                if row['result'] not in exclude_from_ab:
                     total_at_bats += 1
                 if row['result'] in hit_results:
                     total_hits += 1
 
-        if result not in ['保送']:
+        if result not in exclude_from_ab:
             total_at_bats += 1
         if result in hit_results:
             total_hits += 1
@@ -171,85 +155,6 @@ def batting_record():
 def delete_record(record_id):
     delete_record_by_index(record_id)
     return redirect('/batting')
-
-@app.route('/summary')
-def summary():
-    players = load_players()
-    records = load_records()
-    hit_results = ['一壘', '二壘', '三壘', '全壘打']
-    # ✅ 僅算安打與保送為合法上壘
-    on_base_results = hit_results + ['保送']
-
-    stats = []
-    for p in players:
-        number = p['number']
-        name = p['name']
-        at_bats = hits = walks = on_base = total_rbi = total_bases = 0
-        runner_on_any_base_hits = 0
-        runner_on_any_base_at_bats = 0
-        risp_specific_hits = 0
-        risp_specific_at_bats = 0
-
-        for r in records:
-            if r['number'] != number:
-                continue
-            result = r['result']
-            has_runner = (r['has_runner'] or '').strip()
-
-            is_ab = result not in ['保送']
-            is_hit = result in hit_results
-
-            if is_ab and (has_runner == '一壘有人' or has_runner == '得點圈有人'):
-                runner_on_any_base_at_bats += 1
-                if is_hit:
-                    runner_on_any_base_hits += 1
-
-            if is_ab and has_runner == '得點圈有人':
-                risp_specific_at_bats += 1
-                if is_hit:
-                    risp_specific_hits += 1
-
-            if is_ab:
-                at_bats += 1
-                if is_hit:
-                    hits += 1
-
-            if result == '保送':
-                walks += 1
-            if result in on_base_results:
-                on_base += 1
-
-            if result == '一壘': total_bases += 1
-            elif result == '二壘': total_bases += 2
-            elif result == '三壘': total_bases += 3
-            elif result == '全壘打': total_bases += 4
-
-            try:
-                total_rbi += int(r['rbi'])
-            except (ValueError, TypeError):
-                pass
-
-        average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
-        obp = round(on_base / (at_bats + walks), 3) if (at_bats + walks) > 0 else 0.000
-        slg = round(total_bases / at_bats, 3) if at_bats > 0 else 0.000
-        runner_avg = round(runner_on_any_base_hits / runner_on_any_base_at_bats, 3) if runner_on_any_base_at_bats > 0 else 0.000
-        risp_avg = round(risp_specific_hits / risp_specific_at_bats, 3) if risp_specific_at_bats > 0 else 0.000
-
-        stats.append({
-            'number': number,
-            'name': name,
-            'at_bats': at_bats,
-            'hits': hits,
-            'average': f"{average:.3f}",
-            'obp': f"{obp:.3f}",
-            'slg': f"{slg:.3f}",
-            'rbi': total_rbi,
-            'runner_avg': f"{runner_avg:.3f}",
-            'risp_avg': f"{risp_avg:.3f}"
-        })
-
-    return render_template('summary.html', stats=stats)
-
 
 # ✅ 啟動前建立資料表
 init_db()
