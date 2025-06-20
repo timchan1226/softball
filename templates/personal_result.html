@@ -15,7 +15,7 @@
     h2 {
       text-align: center;
       font-size: 22px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .info {
@@ -74,12 +74,13 @@
 <body>
 
   <h2>📋 {{ player.name }} 的打擊紀錄</h2>
-  <div class="info">查詢日期：{{ date }}</div>
+  <div class="info">查詢區間：{{ start }} ~ {{ end }}</div>
 
   {% if records %}
     <table>
       <thead>
         <tr>
+          <th>日期</th>
           <th>結果</th>
           <th>打擊率</th>
           <th>壘上狀況</th>
@@ -89,6 +90,7 @@
       <tbody>
         {% for record in records %}
         <tr>
+          <td>{{ record.date }}</td>
           <td>{{ record.result }}</td>
           <td>{{ '%.3f' % record.average }}</td>
           <td>{{ record.has_runner or '無人' }}</td>
