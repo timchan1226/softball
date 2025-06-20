@@ -177,7 +177,8 @@ def summary():
     players = load_players()
     records = load_records()
     hit_results = ['一壘', '二壘', '三壘', '全壘打']
-    on_base_results = hit_results + ['保送', '野選', '對手失誤上壘']
+    # ✅ 僅算安打與保送為合法上壘
+    on_base_results = hit_results + ['保送']
 
     stats = []
     for p in players:
@@ -248,6 +249,7 @@ def summary():
         })
 
     return render_template('summary.html', stats=stats)
+
 
 # ✅ 啟動前建立資料表
 init_db()
