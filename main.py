@@ -1,3 +1,5 @@
+# ✅ SQLite 改 PostgreSQL 並加入墼上、得點圈安打率
+
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
@@ -64,7 +66,7 @@ def load_records():
             'number': row[1],
             'name': row[2],
             'date': row[3],
-            'average': row[4], # average will be handled as float
+            'average': row[4],
             'result': row[5],
             'has_runner': row[6] or '',
             'rbi': row[7]
@@ -104,6 +106,19 @@ def manage_players():
     players = load_players()
     return render_template('player_form.html', players=players)
 
+@app.route('/records')
+def personal_record_form():
+    players = load_players()
+    return render_template('personal_form.html', players=players)
+
+@app.route('/records/result', methods=['POST'])
+def personal_record_result():
+    date_input = request.form['date']
+    number = request.form['player_number']
+    records = [r for r in load_records() if r['number'] == number and r['date'] == date_input]
+    player = next((p for p in load_players() if p['number'] == number), None)
+    return render_template('personal_result.html', records=records, player=player, date=date_input)
+
 @app.route('/batting', methods=['GET', 'POST'])
 def batting_record():
     players = load_players()
@@ -112,7 +127,7 @@ def batting_record():
         name = next((p['name'] for p in players if p['number'] == number), '未知')
         result = request.form['batting_result']
         game_date = request.form['game_date']
-        has_runner = request.form['has_runner'] # Capture has_runner directly from form
+        has_runner = request.form['has_runner']
         rbi = request.form['rbi']
 
         hit_results = ['一壘', '二壘', '三壘', '全壘打']
@@ -121,12 +136,11 @@ def batting_record():
         existing_records = load_records()
         for row in existing_records:
             if row['number'] == number:
-                if row['result'] not in ['保送']: # 排除保送計算打席
+                if row['result'] not in ['保送']:
                     total_at_bats += 1
                 if row['result'] in hit_results:
                     total_hits += 1
 
-        # Calculate average for the new record (cumulative up to this point)
         if result not in ['保送']:
             total_at_bats += 1
         if result in hit_results:
@@ -138,9 +152,9 @@ def batting_record():
             'number': number,
             'name': name,
             'date': game_date,
-            'average': average, # Save as float
+            'average': average,
             'result': result,
-            'has_runner': has_runner, # Use the value captured from the form
+            'has_runner': has_runner,
             'rbi': rbi
         })
         return redirect('/batting')
@@ -166,12 +180,8 @@ def summary():
         number = p['number']
         name = p['name']
         at_bats = hits = walks = on_base = total_rbi = total_bases = 0
-        
-        # Counters for '壘上有人打擊率' (now includes '一壘有人' and '得點圈有人')
         runner_on_any_base_hits = 0
         runner_on_any_base_at_bats = 0
-        
-        # Counters for '得點圈打擊率' (only '得點圈有人')
         risp_specific_hits = 0
         risp_specific_at_bats = 0
 
@@ -179,26 +189,20 @@ def summary():
             if r['number'] != number:
                 continue
             result = r['result']
-            has_runner = (r['has_runner'] or '').strip() # Ensure stripping whitespace
+            has_runner = (r['has_runner'] or '').strip()
 
             is_ab = result not in ['保送']
             is_hit = result in hit_results
-            
-            # --- Start of specific calculation for your fields '得點圈有人' and '一壘有人' ---
-            
-            # For '壘上有人打擊率': count if 'has_runner' is '一壘有人' OR '得點圈有人'
+
             if is_ab and (has_runner == '一壘有人' or has_runner == '得點圈有人'):
                 runner_on_any_base_at_bats += 1
                 if is_hit:
                     runner_on_any_base_hits += 1
 
-            # For '得點圈打擊率': only count if 'has_runner' is '得點圈有人'
             if is_ab and has_runner == '得點圈有人':
                 risp_specific_at_bats += 1
                 if is_hit:
                     risp_specific_hits += 1
-
-            # --- End of specific calculation ---
 
             if is_ab:
                 at_bats += 1
@@ -217,14 +221,12 @@ def summary():
 
             try:
                 total_rbi += int(r['rbi'])
-            except (ValueError, TypeError): # 處理 rbi 不是有效數字的情況
+            except (ValueError, TypeError):
                 pass
 
         average = round(hits / at_bats, 3) if at_bats > 0 else 0.000
         obp = round(on_base / (at_bats + walks), 3) if (at_bats + walks) > 0 else 0.000
         slg = round(total_bases / at_bats, 3) if at_bats > 0 else 0.000
-        
-        # Calculate rates based on the new specific conditions
         runner_avg = round(runner_on_any_base_hits / runner_on_any_base_at_bats, 3) if runner_on_any_base_at_bats > 0 else 0.000
         risp_avg = round(risp_specific_hits / risp_specific_at_bats, 3) if risp_specific_at_bats > 0 else 0.000
 
@@ -237,8 +239,8 @@ def summary():
             'obp': f"{obp:.3f}",
             'slg': f"{slg:.3f}",
             'rbi': total_rbi,
-            'runner_avg': f"{runner_avg:.3f}", # Now includes '一壘有人' AND '得點圈有人'
-            'risp_avg': f"{risp_avg:.3f}" # Still only '得點圈有人'
+            'runner_avg': f"{runner_avg:.3f}",
+            'risp_avg': f"{risp_avg:.3f}"
         })
 
     return render_template('summary.html', stats=stats)
