@@ -1,7 +1,9 @@
+# main.py (Updated content)
+
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
-from datetime import date
+from datetime import date, datetime # Import datetime
 from urllib.parse import urlparse
 
 app = Flask(__name__)
@@ -58,7 +60,7 @@ def save_player(player):
 def load_records():
     with get_connection() as conn:
         c = conn.cursor()
-        c.execute("SELECT id, number, name, date, average, result, has_runner, rbi FROM records")
+        c.execute("SELECT id, number, name, date, average, result, has_runner, rbi FROM records ORDER BY date DESC, id DESC") # Order by date and then id for consistent display
         return [{
             'id': row[0],
             'number': row[1],
@@ -145,7 +147,7 @@ def batting_record():
         })
         return redirect('/batting')
 
-    records = list(reversed(load_records()))
+    records = load_records() # Records are now loaded in descending order
     today = date.today().isoformat()
     return render_template('batting_form.html', players=players, records=records, today=today)
 
@@ -242,6 +244,49 @@ def summary():
         })
 
     return render_template('summary.html', stats=stats)
+
+
+# --- New Report Feature Routes ---
+
+@app.route('/report_form')
+def report_form():
+    players = load_players()
+    today = date.today().isoformat()
+    return render_template('report_form.html', players=players, today=today)
+
+@app.route('/report_results', methods=['POST'])
+def report_results():
+    player_number = request.form['player_number']
+    start_date_str = request.form['start_date']
+    end_date_str = request.form['end_date']
+
+    # Convert date strings to date objects for comparison
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return "⚠️ 日期格式錯誤，請使用 YYYY-MM-DD 格式。<br><a href='/report_form'>返回</a>"
+
+    # Fetch player name for display
+    players = load_players()
+    player_name = next((p['name'] for p in players if p['number'] == player_number), '未知')
+
+    filtered_records = []
+    all_records = load_records()
+    for record in all_records:
+        record_date = datetime.strptime(record['date'], '%Y-%m-%d').date()
+        if record['number'] == player_number and start_date <= record_date <= end_date:
+            filtered_records.append(record)
+
+    # Sort records by date in ascending order for the report
+    filtered_records.sort(key=lambda x: x['date'])
+
+    return render_template('report_results.html',
+                           player_name=player_name,
+                           player_number=player_number,
+                           start_date=start_date_str,
+                           end_date=end_date_str,
+                           records=filtered_records)
 
 # ✅ 啟動前建立資料表
 init_db()
