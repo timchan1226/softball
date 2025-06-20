@@ -1,24 +1,26 @@
-# ✅ SQLite 儲存版本（改寫自 CSV 版）
+# ✅ 改用 PostgreSQL 儲存版本（適用於 Railway）
 
 from flask import Flask, render_template, request, redirect
-import sqlite3
+import psycopg2
 import os
 from datetime import date
 
 app = Flask(__name__)
 
-DB_FILE = 'softball.db'
+# ✅ PostgreSQL 資料庫連線設定（從環境變數取得）
+DB_URL = os.environ.get("DATABASE_URL")  # Railway 預設提供 DATABASE_URL
 
 # ✅ 初始化資料庫
+
 def init_db():
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS players (
                         number TEXT PRIMARY KEY,
                         name TEXT
                     )''')
         c.execute('''CREATE TABLE IF NOT EXISTS records (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id SERIAL PRIMARY KEY,
                         number TEXT,
                         name TEXT,
                         date TEXT,
@@ -27,24 +29,25 @@ def init_db():
                         has_runner TEXT,
                         rbi INTEGER
                     )''')
+        conn.commit()
 
 # ✅ 載入球員資料
 def load_players():
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
-        c.execute("SELECT number, name FROM players")
+        c.execute("SELECT number, name FROM players ORDER BY number")
         return [{'number': row[0], 'name': row[1]} for row in c.fetchall()]
 
 # ✅ 儲存新球員
 def save_player(player):
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO players (number, name) VALUES (?, ?)", (player['number'], player['name']))
+        c.execute("INSERT INTO players (number, name) VALUES (%s, %s)", (player['number'], player['name']))
         conn.commit()
 
 # ✅ 載入打擊紀錄
 def load_records():
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
         c.execute("SELECT id, number, name, date, average, result, has_runner, rbi FROM records")
         return [
@@ -62,18 +65,18 @@ def load_records():
 
 # ✅ 儲存打擊紀錄
 def save_record(record):
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
         c.execute('''INSERT INTO records (number, name, date, average, result, has_runner, rbi)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                     VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                   (record['number'], record['name'], record['date'], record['average'], record['result'], record['has_runner'], record['rbi']))
         conn.commit()
 
 # ✅ 刪除打擊紀錄
 def delete_record_by_index(record_id):
-    with sqlite3.connect(DB_FILE) as conn:
+    with psycopg2.connect(DB_URL) as conn:
         c = conn.cursor()
-        c.execute("DELETE FROM records WHERE id = ?", (record_id,))
+        c.execute("DELETE FROM records WHERE id = %s", (record_id,))
         conn.commit()
 
 @app.route('/')
