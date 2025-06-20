@@ -37,6 +37,16 @@
 
     th {
       background-color: #e9ecef;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sort-asc::after {
+      content: " ▲";
+    }
+
+    .sort-desc::after {
+      content: " ▼";
     }
 
     a {
@@ -53,19 +63,19 @@
 
   <h2>球員統計總覽</h2>
   <div class="table-container">
-    <table>
+    <table id="summaryTable">
       <thead>
         <tr>
-          <th>背號</th>
-          <th>姓名</th>
-          <th>打數</th>
-          <th>安打</th>
-          <th>打擊率</th>
-          <th>上壘率</th>
-          <th>長打率 (SLG)</th>
-          <th>壘上有人打擊率</th>
-          <th>得點圈打擊率</th>
-          <th>打點</th>
+          <th onclick="sortTable(0)">背號</th>
+          <th onclick="sortTable(1)">姓名</th>
+          <th onclick="sortTable(2)">打數</th>
+          <th onclick="sortTable(3)">安打</th>
+          <th onclick="sortTable(4)">打擊率</th>
+          <th onclick="sortTable(5)">上壘率</th>
+          <th onclick="sortTable(6)">長打率 (SLG)</th>
+          <th onclick="sortTable(7)">壘上有人打擊率</th>
+          <th onclick="sortTable(8)">得點圈打擊率</th>
+          <th onclick="sortTable(9)">打點</th>
         </tr>
       </thead>
       <tbody>
@@ -88,6 +98,48 @@
   </div>
 
   <a href="/">返回首頁</a>
+
+  <script>
+    let currentSortCol = null;
+    let currentSortDir = 'desc';
+
+    function sortTable(colIndex) {
+      const table = document.getElementById("summaryTable");
+      const rows = Array.from(table.rows).slice(1);
+      const headers = table.querySelectorAll("th");
+
+      // 清除其他欄位箭頭
+      headers.forEach((th, i) => {
+        th.classList.remove("sort-asc", "sort-desc");
+        if (i === colIndex) {
+          // 切換排序方向
+          currentSortDir = (currentSortCol === colIndex && currentSortDir === 'asc') ? 'desc' : 'asc';
+          currentSortCol = colIndex;
+          th.classList.add(currentSortDir === 'asc' ? "sort-asc" : "sort-desc");
+        }
+      });
+
+      rows.sort((a, b) => {
+        let aText = a.cells[colIndex].innerText.trim();
+        let bText = b.cells[colIndex].innerText.trim();
+        let aVal = isNaN(aText) ? aText : parseFloat(aText);
+        let bVal = isNaN(bText) ? bText : parseFloat(bText);
+
+        if (aVal < bVal) return currentSortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return currentSortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      for (const row of rows) {
+        table.tBodies[0].appendChild(row);
+      }
+    }
+
+    // 預設按第 4 欄（打擊率）做降冪排序
+    window.onload = function () {
+      sortTable(4);
+    };
+  </script>
 
 </body>
 </html>
